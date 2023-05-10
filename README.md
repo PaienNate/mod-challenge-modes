@@ -21,3 +21,5 @@
 - 头衔
 - 天赋点
 - 经验倍数
+
+Please note that this module uses Player Settings to store enabled challenges, so please ensure EnablePlayerSettings is set to 1 in your worldserver.conf.
