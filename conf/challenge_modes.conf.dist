@@ -14,7 +14,7 @@
 #                     1 - Enabled
 #
 
-ChallengeModes.Enable = 0
+ChallengeModes.Enable = 1
 #
 #    提供以下挑战模式：
 #        Hardcore（硬核） - 死去的玩家永远是鬼魂，永远无法复活。
