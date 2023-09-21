@@ -10,6 +10,7 @@
 #include "Item.h"
 #include "ItemTemplate.h"
 #include "GameObjectAI.h"
+#include "Pet.h"
 #include <map>
 
 
@@ -22,7 +23,8 @@ enum ChallengeModeSettings
     SETTING_SLOW_XP_GAIN       = 4,
     SETTING_VERY_SLOW_XP_GAIN  = 5,
     SETTING_QUEST_XP_ONLY      = 6,
-    SETTING_IRON_MAN           = 7
+    SETTING_IRON_MAN           = 7,
+    HARDCORE_DEAD              = 8
 };
 
 enum AllowedProfessions

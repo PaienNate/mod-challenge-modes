@@ -39,6 +39,8 @@ bool ChallengeModes::challengeEnabled(ChallengeModeSettings setting) const
             return questXpOnlyEnable;
         case SETTING_IRON_MAN:
             return ironManEnable;
+        case HARDCORE_DEAD:
+            break;
     }
     return false;
 }
@@ -63,6 +65,8 @@ float ChallengeModes::getXpBonusForChallenge(ChallengeModeSettings setting) cons
             return questXpOnlyXpBonus;
         case SETTING_IRON_MAN:
             return 1;
+        case HARDCORE_DEAD:
+            break;
     }
     return 1;
 }
@@ -87,6 +91,8 @@ const std::unordered_map<uint8, uint32> *ChallengeModes::getTitleMapForChallenge
             return &questXpOnlyTitleRewards;
         case SETTING_IRON_MAN:
             return &ironManTitleRewards;
+        case HARDCORE_DEAD:
+            break;
     }
     return {};
 }
@@ -111,6 +117,8 @@ const std::unordered_map<uint8, uint32> *ChallengeModes::getTalentMapForChalleng
             return &questXpOnlyTalentRewards;
         case SETTING_IRON_MAN:
             return &ironManTalentRewards;
+        case HARDCORE_DEAD:
+            break;
     }
     return {};
 }
@@ -135,6 +143,8 @@ const std::unordered_map<uint8, uint32> *ChallengeModes::getItemMapForChallenge(
             return &questXpOnlyItemRewards;
         case SETTING_IRON_MAN:
             return &ironManItemRewards;
+        case HARDCORE_DEAD:
+            break;
     }
     return {};
 }
@@ -265,6 +275,44 @@ class ChallengeMode_Hardcore : public ChallengeMode
 public:
     ChallengeMode_Hardcore() : ChallengeMode("ChallengeMode_Hardcore", SETTING_HARDCORE) {}
 
+    void OnLogin(Player* player) override
+    {
+        if (!sChallengeModes->challengeEnabledForPlayer(SETTING_HARDCORE, player) || !sChallengeModes->challengeEnabledForPlayer(HARDCORE_DEAD, player))
+        {
+            return;
+        }
+        player->KillPlayer();
+        player->GetSession()->KickPlayer("Hardcore character died");
+    }
+
+    void OnPlayerReleasedGhost(Player* player) override
+    {
+        if (!sChallengeModes->challengeEnabledForPlayer(SETTING_HARDCORE, player))
+        {
+            return;
+        }
+        player->UpdatePlayerSetting("mod-challenge-modes", HARDCORE_DEAD, 1);
+        player->GetSession()->KickPlayer("Hardcore character died");
+    }
+
+    void OnPVPKill(Player* /*killer*/, Player* killed) override
+    {
+        if (!sChallengeModes->challengeEnabledForPlayer(SETTING_HARDCORE, killed))
+        {
+            return;
+        }
+        killed->UpdatePlayerSetting("mod-challenge-modes", HARDCORE_DEAD, 1);
+    }
+
+    void OnPlayerKilledByCreature(Creature* /*killer*/, Player* killed) override
+    {
+        if (!sChallengeModes->challengeEnabledForPlayer(SETTING_HARDCORE, killed))
+        {
+            return;
+        }
+        killed->UpdatePlayerSetting("mod-challenge-modes", HARDCORE_DEAD, 1);
+    }
+
     void OnPlayerResurrect(Player* player, float /*restore_percent*/, bool /*applySickness*/) override
     {
         if (!sChallengeModes->challengeEnabledForPlayer(SETTING_HARDCORE, player))
@@ -272,7 +320,9 @@ public:
             return;
         }
         // A better implementation is to not allow the resurrect but this will need a new hook added first
+        player->UpdatePlayerSetting("mod-challenge-modes", HARDCORE_DEAD, 1);
         player->KillPlayer();
+        player->GetSession()->KickPlayer("Hardcore character died");
     }
 
     void OnGiveXP(Player* player, uint32& amount, Unit* victim, uint8 xpSource) override
@@ -421,6 +471,10 @@ public:
         }
         if (victim)
         {
+            // Still award XP to pets - they won't be able to pass the player's level
+            Pet* pet = player->GetPet();
+            if (pet && xpSource == XPSOURCE_KILL)
+                pet->GivePetXP(player->GetGroup() ? amount / 2 : amount);
             amount = 0;
         }
         else
